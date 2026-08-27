@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Call Register</title>
+<style>
+  :root{
+    --paper: #F1E8D0;
+    --paper-line: #D9C79E;
+    --paper-shadow: #E4D8B4;
+    --ink: #23304A;
+    --ink-soft: #5B6478;
+    --margin-red: #A8342A;
+    --stamp-red: #9C2E24;
+    --gold: #B4892E;
+    --green-done: #3F6B4A;
+    --paper-dark: #E9DFC0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Tamil", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{
+    background-image:
+      repeating-linear-gradient(
+        transparent,
+        transparent 37px,
+        var(--paper-line) 38px
+      );
+    background-position: 0 92px;
+  }
+  .wrap{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+    position: relative;
+  }
+  .wrap::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0;
+    left: 52px;
+    width: 2px;
+    background: var(--margin-red);
+    opacity: 0.55;
+    pointer-events:none;
+  }
+  @media (max-width:520px){
+    .wrap::before{ left: 34px; }
+  }
+
+  header.top{
+    padding: 14px 0 16px 60px;
+    position:relative;
+  }
+  @media (max-width:520px){ header.top{ padding-left: 42px; } }
+
+  .eyebrow{
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--margin-red);
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  h1{
+    font-family: "Courier New", Courier, monospace;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0 0 2px;
+    color: var(--ink);
+  }
+  .subline{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 6px;
+  }
+  .progress-track{
+    flex:1;
+    height: 10px;
+    background: var(--paper-dark);
+    border: 1px solid var(--paper-line);
+    border-radius: 2px;
+    overflow:hidden;
+    position:relative;
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--green-done), #578a63);
+    width:0%;
+    transition: width .35s ease;
+  }
+  .progress-label{
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13px;
+    font-weight:700;
+    white-space:nowrap;
+    color: var(--ink);
+    min-width: 70px;
+    text-align:right;
+  }
+
+  .controls{
+    display:flex;
+    gap:8px;
+    margin: 12px 0 4px;
+    flex-wrap:wrap;
+  }
+  .search{
+    flex:1;
+    min-width: 160px;
+    background: #FBF6E7;
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .search:focus{ outline: 2px solid var(--gold); outline-offset:1px; }
+  button.pill{
+    background: transparent;
+    border: 1px solid var(--ink-soft);
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-family: "Courier New", monospace;
+    letter-spacing: 0.5px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    cursor:pointer;
+  }
+  button.pill:hover{ background: var(--paper-dark); }
+  button.pill:focus-visible{ outline: 2px solid var(--gold); outline-offset:1px; }
+
+  .list{
+    margin-top: 10px;
+    padding-left: 60px;
+  }
+  @media (max-width:520px){ .list{ padding-left: 42px; } }
+
+  .row{
+    position: relative;
+    display:flex;
+    align-items:flex-start;
+    gap: 10px;
+    padding: 9px 6px 9px 4px;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .row:last-child{ border-bottom:none; }
+  .row.done{
+    opacity: 0.72;
+  }
+  .row.hidden{ display:none; }
+
+  .serial{
+    font-family:"Courier New", monospace;
+    font-size: 12px;
+    color: var(--margin-red);
+    font-weight:700;
+    width: 26px;
+    flex-shrink:0;
+    padding-top: 3px;
+    text-align:right;
+    left:-42px;
+  }
+  @media (max-width:520px){ .serial{ display:none; } }
+
+  .tickbox{
+    flex-shrink:0;
+    width: 26px;
+    height: 26px;
+    margin-top: 1px;
+    border: 2px solid var(--ink-soft);
+    border-radius: 3px;
+    background: #FBF6E7;
+    cursor:pointer;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .tickbox:hover{ border-color: var(--margin-red); }
+  .tickbox:focus-visible{ outline: 2px solid var(--gold); outline-offset:2px; }
+  .tickbox svg{
+    width: 18px; height:18px;
+    opacity:0;
+    transform: scale(0.5) rotate(-8deg);
+    transition: opacity .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .row.done .tickbox{
+    background: #F4E9E4;
+    border-color: var(--stamp-red);
+  }
+  .row.done .tickbox svg{
+    opacity:1;
+    transform: scale(1) rotate(-8deg);
+  }
+  .tickbox svg path{ stroke: var(--stamp-red); }
+
+  .info{
+    flex:1;
+    min-width:0;
+  }
+  .name{
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height:1.3;
+    margin: 0 0 2px;
+  }
+  .row.done .name{
+    text-decoration: line-through;
+    text-decoration-color: var(--stamp-red);
+    text-decoration-thickness: 1.5px;
+  }
+  .meta{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .meta .phone-num{
+    font-family:"Courier New", monospace;
+    color: var(--ink);
+  }
+  .no-phone{
+    font-style: italic;
+    color: #9a8f6f;
+  }
+
+  .actions{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+    align-items:center;
+    padding-top: 2px;
+  }
+  .actions a{
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    font-size: 15px;
+    border: 1px solid var(--paper-line);
+    background: #FBF6E7;
+    color: var(--ink);
+    transition: transform .12s ease, background .12s ease;
+  }
+  .actions a:hover{ transform: translateY(-1px); background: var(--paper-dark); }
+  .actions a.disabled{
+    opacity: 0.3;
+    pointer-events:none;
+  }
+
+  .stamp-mark{
+    position:absolute;
+    right: 4px;
+    top: 6px;
+    font-family: "Courier New", monospace;
+    font-size: 9px;
+    font-weight:700;
+    letter-spacing:1px;
+    color: var(--stamp-red);
+    border: 1.5px solid var(--stamp-red);
+    border-radius: 3px;
+    padding: 1px 5px;
+    transform: rotate(-6deg);
+    opacity:0;
+    transition: opacity .2s ease;
+    pointer-events:none;
+    text-transform:uppercase;
+  }
+  .row.done .stamp-mark{ opacity: 0.85; }
+  @media (max-width:600px){ .stamp-mark{ display:none; } }
+
+  .empty-state{
+    padding: 40px 20px;
+    text-align:center;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  footer.note{
+    padding: 20px 0 0 60px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-family: "Courier New", monospace;
+  }
+  @media (max-width:520px){ footer.note{ padding-left: 42px; } }
+
+  .save-flag{
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-family:"Courier New", monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Tiruvannamalai District</p>
+    <h1>Field Call Register</h1>
+    <p class="subline">50 construction & building contacts — tick off as you call</p>
+
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">0 / 50</div>
+    </div>
+    <span class="save-flag" id="saveFlag">&nbsp;</span>
+
+    <div class="controls">
+      <input type="text" class="search" id="search" placeholder="Search name or city…" autocomplete="off">
+      <button class="pill" id="filterBtn">SHOW: ALL</button>
+      <button class="pill" id="resetBtn">RESET TICKS</button>
+    </div>
+  </header>
+
+  <div class="list" id="list"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">No entries match your search.</div>
+
+  <footer class="note">Data from Google Places export · 50 records</footer>
+</div>
+
+<script>
+const leads = [{"name": "Guru Constructions", "phone": "+91 96294 06198", "cleanPhone": "+919629406198", "city": "Tiruvannamalai"}, {"name": "ELEGANT Designer & Construction", "phone": "+91 72071 15307", "cleanPhone": "+917207115307", "city": "Odiyathur"}, {"name": "SRM CONSTRUCTIONS", "phone": "", "cleanPhone": "", "city": "Vaniyambadi"}, {"name": "M SAND TIPPER 25 ANBE SHIVAM DASS & co", "phone": "+91 93424 24090", "cleanPhone": "+919342424090", "city": "Tiruvannamalai, City"}, {"name": "SRINIVASA CITY", "phone": "+91 99449 33457", "cleanPhone": "+919944933457", "city": "Melathikkan, Tiruvannamalai"}, {"name": "C. Gopi (Building contractor)", "phone": "", "cleanPhone": "", "city": "Tirupathur, Achamangalam"}, {"name": "Balaji Builders & Renovations work", "phone": "+91 63828 95487", "cleanPhone": "+916382895487", "city": "Vellore"}, {"name": "BV Elite Constructions", "phone": "", "cleanPhone": "", "city": "Ranipet"}, {"name": "Dsp sons & construction", "phone": "", "cleanPhone": "", "city": "Muttattur"}, {"name": "MPI Constructions", "phone": "", "cleanPhone": "", "city": "Melathikkan"}, {"name": "SHAMA DESIGNERS&BUILDERS", "phone": "+91 99443 46862", "cleanPhone": "+919944346862", "city": "Krishnagiri"}, {"name": "DBL main camp Salem", "phone": "", "cleanPhone": "", "city": "Dharmapuri, Palayam Kombai"}, {"name": "GOVINDARAJ CONSTRUCTIONS", "phone": "", "cleanPhone": "", "city": "Katiganapalli"}, {"name": "TS Group of Company", "phone": "+91 90475 66393", "cleanPhone": "+919047566393", "city": "Tirupathur"}, {"name": "HI TECH CONSTRUCTION AND BUILDERS", "phone": "", "cleanPhone": "", "city": "Peddatalapalli, Peddathanapalli"}, {"name": "Thirukumaran Earth Movers Housing board Arni", "phone": "", "cleanPhone": "", "city": "Arani, Mullipattu"}, {"name": "PIONEER BUILDERS", "phone": "+91 94432 18485", "cleanPhone": "+919443218485", "city": "Krishnagiri"}, {"name": "RK Construction Co.", "phone": "", "cleanPhone": "", "city": "Sevoor, Arani"}, {"name": "Scon architect", "phone": "+91 95857 52839", "cleanPhone": "+919585752839", "city": "Thunthareegampattu, Arani"}, {"name": "VEDH CONSTRUCTION", "phone": "+91 95788 85888", "cleanPhone": "+919578885888", "city": "Viluppuram"}, {"name": "DREAM HOUSE CONSTRUCTION", "phone": "", "cleanPhone": "", "city": "Anaicut"}, {"name": "JUMBO BUILDERS", "phone": "+91 94422 86786", "cleanPhone": "+919442286786", "city": "Kanchipuram"}, {"name": "J v construction road works", "phone": "", "cleanPhone": "", "city": "Kanchipuram"}, {"name": "Quba constructions", "phone": "+91 86829 87689", "cleanPhone": "+918682987689", "city": "Melvisharam"}, {"name": "RJ construction", "phone": "", "cleanPhone": "", "city": "Mamandur"}, {"name": "BLUE CONTINENT", "phone": "", "cleanPhone": "", "city": "A.Reddihalli"}, {"name": "Unique Craft Engineer's - Architect I Builder I Construction", "phone": "", "cleanPhone": "", "city": "Bommidi"}, {"name": "GT GRAND CONSTRUCTION", "phone": "+91 79047 54525", "cleanPhone": "+917904754525", "city": "Chinnakunnathur, Upparapatti"}, {"name": "muruganantham road contractor", "phone": "", "cleanPhone": "", "city": "Viluppuram"}, {"name": "Ramalaya Real Estate", "phone": "+91 95510 49378", "cleanPhone": "+919551049378", "city": "Adukkamparai, Vellore"}, {"name": "Vedha construction", "phone": "", "cleanPhone": "", "city": "Viluppuram, V. Marudur"}, {"name": "ARCA Construction", "phone": "", "cleanPhone": "", "city": "Mangalam, Moongilthuraippattu"}, {"name": "AJ & GO CONSTRUCTION SERVICES", "phone": "+91 97881 76651", "cleanPhone": "+919788176651", "city": "Nathathahalli"}, {"name": "Mr.Civil at Happy Construction", "phone": "+91 97869 31231", "cleanPhone": "+919786931231", "city": "Kanchipuram"}, {"name": "Sri pachiyamman construction sabapathi", "phone": "", "cleanPhone": "", "city": "Boalanahalli, Samichettipatti"}, {"name": "Taj Steels", "phone": "", "cleanPhone": "", "city": "Kannamangalam"}, {"name": "OMSHIVABALAJIJCB", "phone": "", "cleanPhone": "", "city": "Tiruvannamalai"}, {"name": "Sp builders & Engineers", "phone": "+91 82487 15640", "cleanPhone": "+918248715640", "city": "Viluppuram"}, {"name": "Adhithya Housing and Properties / Best construction company", "phone": "+91 88389 09646", "cleanPhone": "+918838909646", "city": "Kanchipuram"}, {"name": "Agile Engineers - Construction and Builders in Dharmapuri", "phone": "+91 94894 31471", "cleanPhone": "+919489431471", "city": "Dharmapuri"}, {"name": "Sri Emperuman construction", "phone": "+91 81245 43429", "cleanPhone": "+918124543429", "city": "Kanchipuram"}, {"name": "TamilPoonkundran Ravanan", "phone": "", "cleanPhone": "", "city": "Kukkalmalai"}, {"name": "Prabu and Prabu Construction & Interiors", "phone": "+91 99446 05597", "cleanPhone": "+919944605597", "city": "Dharmapuri, Pappinaickanahalli"}, {"name": "ராசி கட்டிட நிறுவனம். Rasi construction", "phone": "", "cleanPhone": "", "city": "Thandrampet, Kilsirupakkam"}, {"name": "Ali Construction & Architecture", "phone": "+91 78678 40556", "cleanPhone": "+917867840556", "city": "Bayanapalli"}, {"name": "R K Constructions Kumar", "phone": "+91 97909 97007", "cleanPhone": "+919790997007", "city": "Kilambadi"}, {"name": "SRI VEERU CONSTRUCTION'S", "phone": "", "cleanPhone": "", "city": "Walajapet"}, {"name": "SRI ANNAI CONSTRUCTIONS", "phone": "+91 63809 84239", "cleanPhone": "+916380984239", "city": "Harur"}, {"name": "SPT Earthmovers", "phone": "+91 98435 20303", "cleanPhone": "+919843520303", "city": "Harur, Virappanayakkampatti"}, {"name": "SARVESH CONSTRUCTION &SOLID BLOCKS,CEMENT PRODUCTS", "phone": "+91 97384 49779", "cleanPhone": "+919738449779", "city": "Kalavai"}];
+
+const STORAGE_KEY = 'construction-call-register-ticks';
+let ticks = new Array(leads.length).fill(false);
+let filterMode = 'all'; // all | pending | done
+let searchTerm = '';
+let saveTimer = null;
+
+const listEl = document.getElementById('list');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const searchEl = document.getElementById('search');
+const filterBtn = document.getElementById('filterBtn');
+const resetBtn = document.getElementById('resetBtn');
+const emptyState = document.getElementById('emptyState');
+const saveFlag = document.getElementById('saveFlag');
+
+function checkIconSVG(){
+  return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="M4 12.5L9.5 18L20 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function render(){
+  listEl.innerHTML = '';
+  let visibleCount = 0;
+
+  leads.forEach((lead, i) => {
+    const isDone = !!ticks[i];
+    if(filterMode === 'pending' && isDone) return;
+    if(filterMode === 'done' && !isDone) return;
+
+    const q = searchTerm.trim().toLowerCase();
+    if(q){
+      const hay = (lead.name + ' ' + lead.city).toLowerCase();
+      if(!hay.includes(q)) return;
+    }
+    visibleCount++;
+
+    const row = document.createElement('div');
+    row.className = 'row' + (isDone ? ' done' : '');
+    row.dataset.idx = i;
+
+    const serial = document.createElement('div');
+    serial.className = 'serial';
+    serial.textContent = String(i+1).padStart(2,'0');
+
+    const tickbox = document.createElement('button');
+    tickbox.className = 'tickbox';
+    tickbox.setAttribute('aria-label', isDone ? 'Mark as not called' : 'Mark as called');
+    tickbox.innerHTML = checkIconSVG();
+    tickbox.addEventListener('click', () => toggleTick(i));
+
+    const info = document.createElement('div');
+    info.className = 'info';
+    const nameEl = document.createElement('p');
+    nameEl.className = 'name';
+    nameEl.textContent = lead.name;
+    const metaEl = document.createElement('p');
+    metaEl.className = 'meta';
+    if(lead.phone){
+      metaEl.innerHTML = '<span class="phone-num">' + escapeHtml(lead.phone) + '</span> · ' + escapeHtml(lead.city);
+    } else {
+      metaEl.innerHTML = '<span class="no-phone">no phone listed</span> · ' + escapeHtml(lead.city);
+    }
+    info.appendChild(nameEl);
+    info.appendChild(metaEl);
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const callLink = document.createElement('a');
+    const waLink = document.createElement('a');
+    if(lead.cleanPhone){
+      callLink.href = 'tel:' + lead.cleanPhone;
+      callLink.textContent = '📞';
+      callLink.setAttribute('aria-label', 'Call ' + lead.name);
+      waLink.href = 'https://wa.me/' + lead.cleanPhone.replace('+','');
+      waLink.target = '_blank';
+      waLink.rel = 'noopener noreferrer';
+      waLink.textContent = '💬';
+      waLink.setAttribute('aria-label', 'WhatsApp ' + lead.name);
+    } else {
+      callLink.className = 'disabled';
+      callLink.textContent = '📞';
+      waLink.className = 'disabled';
+      waLink.textContent = '💬';
+    }
+    actions.appendChild(callLink);
+    actions.appendChild(waLink);
+
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp-mark';
+    stamp.textContent = 'called';
+
+    row.appendChild(serial);
+    row.appendChild(tickbox);
+    row.appendChild(info);
+    row.appendChild(actions);
+    row.appendChild(stamp);
+    listEl.appendChild(row);
+  });
+
+  emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+  updateProgress();
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function updateProgress(){
+  const doneCount = ticks.filter(Boolean).length;
+  const pct = Math.round((doneCount / leads.length) * 100);
+  progressFill.style.width = pct + '%';
+  progressLabel.textContent = doneCount + ' / ' + leads.length;
+}
+
+function toggleTick(i){
+  ticks[i] = !ticks[i];
+  render();
+  scheduleSave();
+}
+
+function scheduleSave(){
+  saveFlag.textContent = 'saving…';
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(ticks), false);
+      saveFlag.textContent = 'saved ✓';
+      setTimeout(() => { saveFlag.textContent = '\u00A0'; }, 1200);
+    }catch(e){
+      saveFlag.textContent = 'save failed — kept locally';
+      console.error('Storage error:', e);
+    }
+  }, 300);
+}
+
+async function loadTicks(){
+  try{
+    const result = await window.storage.get(STORAGE_KEY, false);
+    if(result && result.value){
+      const parsed = JSON.parse(result.value);
+      if(Array.isArray(parsed) && parsed.length === leads.length){
+        ticks = parsed;
+      }
+    }
+  }catch(e){
+    console.log('No saved ticks yet, starting fresh.');
+  }
+  render();
+}
+
+searchEl.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  render();
+});
+
+filterBtn.addEventListener('click', () => {
+  if(filterMode === 'all'){ filterMode = 'pending'; filterBtn.textContent = 'SHOW: PENDING'; }
+  else if(filterMode === 'pending'){ filterMode = 'done'; filterBtn.textContent = 'SHOW: CALLED'; }
+  else { filterMode = 'all'; filterBtn.textContent = 'SHOW: ALL'; }
+  render();
+});
+
+resetBtn.addEventListener('click', async () => {
+  if(!confirm('Clear all ticks and start over?')) return;
+  ticks = new Array(leads.length).fill(false);
+  render();
+  scheduleSave();
+});
+
+loadTicks();
+</script>
+</body>
+</html>
